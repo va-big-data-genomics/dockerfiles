@@ -1,31 +1,32 @@
 FROM ubuntu:14.04
 Maintainer Prathima Vembu <pvembu@stanford.edu>
-LABEL Description="Telseq docker" Version="0.02"
-
-VOLUME /tmp
-
-WORKDIR /tmp
 
 RUN apt-get update && \
     apt-get install -y \
-    samtools>=1.16.1 \
-    build-essential \
-    zlib1g-dev \
-    libncurses5-dev \
-    ca-certificates \
-    gcc \
-    make \
-    libpq-dev \
-    git \
-    apt-transport-https \
-    liblzma-dev \
-    libbz2-dev \
-    libcurl3-dev \
-    autotools-dev \
-    automake \
-    cmake \
-    wget 
+        automake \
+        autotools-dev \
+        build-essential \
+        cmake \
+        libjemalloc-dev \
+        libsparsehash-dev \
+        libz-dev \
+	    libbz2-dev \
+	    liblzma-dev \
+        libncurses5-dev \
+        python-matplotlib \
+        wget \
+        zlib1g-dev
 
+#Install htslib 1.16
+RUN wget https://github.com/samtools/htslib/releases/download/1.16/htslib-1.16.tar.bz2 && \
+    tar -xjf htslib-1.16.tar.bz2 && \
+    rm htslib-1.16.tar.bz2 && \
+    cd htslib-1.16 && \
+    ./configure --prefix=/usr/local && \
+    make && \
+    make install
+
+#Install bamtools 2.4.0
 RUN mkdir -p /deps && \
     cd /deps && \
     wget https://github.com/pezmaster31/bamtools/archive/v2.4.0.tar.gz && \
@@ -35,19 +36,29 @@ RUN mkdir -p /deps && \
     mkdir build && \
     cd build && \
     cmake .. && \
-    make
+    make && \
+    make install
 
+#Install samtools 1.16
+RUN wget https://github.com/samtools/samtools/releases/download/1.16/samtools-1.16.tar.bz2 && \
+    tar -xjf samtools-1.16.tar.bz2 && \
+    rm samtools-1.16.tar.bz2 && \
+    cd samtools-1.16 && \
+    ./configure --prefix=/usr/local && \
+    make && \
+    make install
+
+#Install telseq 
 RUN mkdir -p /src && \
-    cd /src && \ 
-    wget https://github.com/zd1/telseq/archive/refs/tags/v0.0.2.tar.gz && \
+    cd /src && \
+    wget https://github.com/zd1/telseq/archive/v0.0.2.tar.gz && \
     tar -xzvf v0.0.2.tar.gz && \
     rm v0.0.2.tar.gz && \
     cd telseq-0.0.2/src && \
     ./autogen.sh && \
-    ./configure --with-bamtools=/deps/bamtools-2.4.0 --prefix=/usr/local && \    
+    ./configure --with-bamtools=/usr/local --prefix=/usr/local && \
     make && \
-    make install 
-
+    make install
 
 ENTRYPOINT ["/usr/local/bin/telseq"]
 CMD ["--help"]
